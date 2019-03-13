@@ -1,0 +1,46 @@
+Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 300 es
+precision highp float;
+
+out vec4 fragmentColor;
+in vec3 worldNormal;
+in vec2 texCoord;
+in vec3 worldPos;
+
+uniform vec4 lightPos[2];
+uniform vec4 lightPowerDensity[2];
+uniform vec3 cameraPos;
+uniform vec3 shadowColor;
+
+
+// we need to bind texture to this
+uniform sampler2D colorTexture;
+
+void main(void) {
+
+  vec3 normal = normalize(worldNormal);
+  fragmentColor = vec4(0, 0, 0, 1);
+
+  for (int i = 0; i < 2; i++){
+
+    vec3 Munit = lightPowerDensity[i].rgb;
+    vec3 y = lightPos[i].xyz;
+    //vec3 light = (y - normal * lightPos[i].w);
+
+    vec3 light = (y - worldPos * lightPos[i].w);
+    vec3 M = Munit/dot(light, light);
+    light = normalize(light);
+    vec3 ks = vec3(5, 5, 5);
+    vec3 v = normalize(cameraPos - worldPos);
+    vec3 h = normalize(v+light);
+
+
+    //old fragment color
+    fragmentColor.rgb += (M * texture(colorTexture, texCoord).rgb * max(dot(normal, light), 0.0) + (M * ks* pow(max(dot(normal, h), 0.0), 50.0) ) );
+
+
+
+  }
+
+  fragmentColor.rgb = fragmentColor.rgb * shadowColor;
+  }
+`;
